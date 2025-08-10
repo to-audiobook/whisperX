@@ -7,7 +7,7 @@ import torch
 from whisperx.audio import load_audio, SAMPLE_RATE
 from whisperx.types import TranscriptionResult, AlignedTranscriptionResult
 
-
+import rich.progress;
 class ProgressHook2:
     """Hook to show progress of each internal step
 
