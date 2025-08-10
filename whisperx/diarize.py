@@ -45,7 +45,7 @@ class ProgressHook2:
 
     def __call__(
         self,
-        step_name: Text,
+        step_name: rich.progress.Text,
         step_artifact: Any,
         file: Optional[Mapping] = None,
         total: Optional[int] = None,
