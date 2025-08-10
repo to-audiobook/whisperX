@@ -51,8 +51,8 @@ class DiarizationPipeline:
             'sample_rate': SAMPLE_RATE
         }
 
-        import timer;
-        with timer.Time('whisperx.diarize.py.DiarizationPipeline.__call__() self.model()'):
+        import whisperx.timer;
+        with whisperx.timer.Time('whisperx.diarize.py.DiarizationPipeline.__call__() self.model()'):
             if return_embeddings:
                 diarization, embeddings = self.model(
                     audio_data,
