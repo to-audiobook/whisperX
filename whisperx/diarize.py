@@ -62,7 +62,7 @@ class DiarizationPipeline:
                     min_speakers=min_speakers,
                     max_speakers=max_speakers,
                     return_embeddings=True,
-                    hook=progressHook
+                    #hook=progressHook
                 )
             else:
                 diarization = self.model(
@@ -70,7 +70,7 @@ class DiarizationPipeline:
                     num_speakers=num_speakers,
                     min_speakers=min_speakers,
                     max_speakers=max_speakers,
-                    hook=progressHook
+                    #hook=progressHook
                 )
                 embeddings = None
         
