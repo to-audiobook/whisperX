@@ -114,7 +114,7 @@ class DiarizationPipeline:
             print(f'segmentation_batch_size:{self.model.segmentation_batch_size}\nembedding_batch_size:{self.model.embedding_batch_size}');
             import pyannote.audio.pipelines.utils.hook;
             #with pyannote.audio.pipelines.utils.hook.ProgressHook() as progressHook:
-            with ProgressHook2(refreshesPerSecond=0.1) as progressHook:
+            with ProgressHook2(refreshesPerSecond=0.033) as progressHook:
                 if return_embeddings:
                     diarization, embeddings = self.model(
                         audio_data,
