@@ -53,26 +53,26 @@ class DiarizationPipeline:
 
         import whisperx.timer;
         with whisperx.timer.Time('whisperx.diarize.py.DiarizationPipeline.__call__() self.model()'):
-            import pyannote.audio.pipelines.utils.hook;
-            with pyannote.audio.pipelines.utils.hook.ProgressHook() as progressHook:
-                if return_embeddings:
-                    diarization, embeddings = self.model(
-                        audio_data,
-                        num_speakers=num_speakers,
-                        min_speakers=min_speakers,
-                        max_speakers=max_speakers,
-                        return_embeddings=True,
-                        hook=progressHook
-                    )
-                else:
-                    diarization = self.model(
-                        audio_data,
-                        num_speakers=num_speakers,
-                        min_speakers=min_speakers,
-                        max_speakers=max_speakers,
-                        hook=progressHook
-                    )
-                    embeddings = None
+            #import pyannote.audio.pipelines.utils.hook;
+            #with pyannote.audio.pipelines.utils.hook.ProgressHook() as progressHook:
+            if return_embeddings:
+                diarization, embeddings = self.model(
+                    audio_data,
+                    num_speakers=num_speakers,
+                    min_speakers=min_speakers,
+                    max_speakers=max_speakers,
+                    return_embeddings=True,
+                    hook=progressHook
+                )
+            else:
+                diarization = self.model(
+                    audio_data,
+                    num_speakers=num_speakers,
+                    min_speakers=min_speakers,
+                    max_speakers=max_speakers,
+                    hook=progressHook
+                )
+                embeddings = None
         
         diarize_df = pd.DataFrame(diarization.itertracks(yield_label=True), columns=['segment', 'label', 'speaker'])
         diarize_df['start'] = diarize_df['segment'].apply(lambda x: x.start)
