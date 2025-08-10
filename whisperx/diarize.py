@@ -8,6 +8,63 @@ from whisperx.audio import load_audio, SAMPLE_RATE
 from whisperx.types import TranscriptionResult, AlignedTranscriptionResult
 
 
+class ProgressHook2:
+    """Hook to show progress of each internal step
+
+    Parameters
+    ----------
+    transient: bool, optional
+        Clear the progress on exit. Defaults to False.
+
+    Example
+    -------
+    pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization")
+    with ProgressHook() as hook:
+       output = pipeline(file, hook=hook)
+    """
+
+    def __init__(self, transient: bool = False, refreshesPerSecond=0.1):
+        self.transient = transient;
+        self.refreshesPerSecond = refreshesPerSecond;
+
+    def __enter__(self):
+        self.progress = rich.progress.Progress(
+            rich.progress.TextColumn("[progress.description]{task.description}"),
+            rich.progress.BarColumn(),
+            rich.progress.TaskProgressColumn(),
+            rich.progress.TimeRemainingColumn(elapsed_when_finished=True),
+            transient=self.transient,
+            refresh_per_second=self.refreshesPerSecond,
+
+        )
+        self.progress.start()
+        return self
+
+    def __exit__(self, *args):
+        self.progress.stop()
+
+    def __call__(
+        self,
+        step_name: Text,
+        step_artifact: Any,
+        file: Optional[Mapping] = None,
+        total: Optional[int] = None,
+        completed: Optional[int] = None,
+    ):
+        if completed is None:
+            completed = total = 1
+
+        if not hasattr(self, "step_name") or step_name != self.step_name:
+            self.step_name = step_name
+            self.step = self.progress.add_task(self.step_name)
+
+        self.progress.update(self.step, completed=completed, total=total)
+
+        # force refresh when completed
+        if completed >= total:
+            self.progress.refresh()
+
+
 class DiarizationPipeline:
     def __init__(
         self,
@@ -55,8 +112,7 @@ class DiarizationPipeline:
         with whisperx.timer.Time('whisperx.diarize.py.DiarizationPipeline.__call__() self.model()'):
             print(f'segmentation_batch_size:{self.model.segmentation_batch_size}\nembedding_batch_size:{self.model.embedding_batch_size}');
             import pyannote.audio.pipelines.utils.hook;
-            with pyannote.audio.pipelines.utils.hook.ProgressHook() as progressHook:
-                progressHook.progress.refresh_per_second = 0.1;
+            with pyannote.audio.pipelines.utils.hook.ProgressHook2(refreshesPerSecond=0.1) as progressHook:                
                 if return_embeddings:
                     diarization, embeddings = self.model(
                         audio_data,
