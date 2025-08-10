@@ -8,6 +8,7 @@ from whisperx.audio import load_audio, SAMPLE_RATE
 from whisperx.types import TranscriptionResult, AlignedTranscriptionResult
 
 import rich.progress;
+import typing;
 class ProgressHook2:
     """Hook to show progress of each internal step
 
@@ -46,8 +47,8 @@ class ProgressHook2:
     def __call__(
         self,
         step_name: rich.progress.Text,
-        step_artifact: Any,
-        file: Optional[Mapping] = None,
+        step_artifact: typing.Any,
+        file: Optional[typing.Mapping] = None,
         total: Optional[int] = None,
         completed: Optional[int] = None,
     ):
