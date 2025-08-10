@@ -53,6 +53,7 @@ class DiarizationPipeline:
 
         import whisperx.timer;
         with whisperx.timer.Time('whisperx.diarize.py.DiarizationPipeline.__call__() self.model()'):
+            import pyannote.audio.pipelines.utils.hook;
             with pyannote.audio.pipelines.utils.hook.ProgressHook() as progressHook:
                 if return_embeddings:
                     diarization, embeddings = self.model(
