@@ -205,6 +205,98 @@ def assign_word_speakers(
     return transcript_result
 
 
+class DiarizationPipeline2:
+    def __init__(
+        self,
+        model_name=None,
+        use_auth_token=None,
+        device: Optional[Union[str, torch.device]] = "cpu",
+    ):
+        if isinstance(device, str):
+            device = torch.device(device)
+        model_config = model_name or "pyannote/speaker-diarization-3.1"
+        self.model = Pipeline.from_pretrained(model_config, use_auth_token=use_auth_token).to(device)
+
+    def __call__(
+        self,
+        audioFilePath: str,
+        num_speakers: Optional[int] = None,
+        min_speakers: Optional[int] = None,
+        max_speakers: Optional[int] = None,
+        return_embeddings: bool = False,
+    ) -> Union[tuple[pd.DataFrame, Optional[dict[str, list[float]]]], pd.DataFrame]:
+        """
+        Perform speaker diarization on audio.
+
+        Args:
+            audio: Path to audio file or audio array
+            num_speakers: Exact number of speakers (if known)
+            min_speakers: Minimum number of speakers to detect
+            max_speakers: Maximum number of speakers to detect
+            return_embeddings: Whether to return speaker embeddings
+
+        Returns:
+            If return_embeddings is True:
+                Tuple of (diarization dataframe, speaker embeddings dictionary)
+            Otherwise:
+                Just the diarization dataframe
+        """
+
+        class AudioLoader:
+            def __init__(self, filePath):
+                self._filePath = filePath;
+            def __call__(self):
+                audio = load_audio(self._filePath)
+                audio_data = {
+                    'waveform': torch.from_numpy(audio[None, :]),
+                    'sample_rate': SAMPLE_RATE
+                }
+                return audio_data;
+
+        audioLoader = AudioLoader(audioFilePath);
+
+        import whisperx.timer;
+        with whisperx.timer.Time('whisperx.diarize.py.DiarizationPipeline.__call__() self.model()'):
+            print(f'segmentation_batch_size:{self.model.segmentation_batch_size}\nembedding_batch_size:{self.model.embedding_batch_size}');
+            import pyannote.audio.pipelines.utils.hook;
+            #with pyannote.audio.pipelines.utils.hook.ProgressHook() as progressHook:
+            with ProgressHook2(refreshesPerSecond=0.033) as progressHook:
+                if return_embeddings:
+                    diarization, embeddings = self.model(
+                        audioLoader,
+                        num_speakers=num_speakers,
+                        min_speakers=min_speakers,
+                        max_speakers=max_speakers,
+                        return_embeddings=True,
+                        hook=progressHook
+                    )
+                else:
+                    diarization = self.model(
+                        audioLoader,
+                        num_speakers=num_speakers,
+                        min_speakers=min_speakers,
+                        max_speakers=max_speakers,
+                        hook=progressHook
+                    )
+                    embeddings = None
+        
+        diarize_df = pd.DataFrame(diarization.itertracks(yield_label=True), columns=['segment', 'label', 'speaker'])
+        diarize_df['start'] = diarize_df['segment'].apply(lambda x: x.start)
+        diarize_df['end'] = diarize_df['segment'].apply(lambda x: x.end)
+
+        if return_embeddings and embeddings is not None:
+            speaker_embeddings = {speaker: embeddings[s].tolist() for s, speaker in enumerate(diarization.labels())}
+            return diarize_df, speaker_embeddings
+        
+        # For backwards compatibility
+        if return_embeddings:
+            return diarize_df, None
+        else:
+            return diarize_df
+
+
+
+
 class Segment:
     def __init__(self, start:int, end:int, speaker:Optional[str]=None):
         self.start = start
